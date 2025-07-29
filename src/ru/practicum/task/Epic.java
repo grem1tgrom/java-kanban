@@ -36,6 +36,6 @@ public class Epic extends Task {
                 ", description='" + description + '\'' +
                 ", status=" + status +
                 ", subtasks_count=" + subtaskList.size() +
-                '}'; // Переписал метод для прямого доступа к Task
+                '}';
     }
 }

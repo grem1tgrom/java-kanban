@@ -4,7 +4,7 @@ import ru.practicum.enums.Status;
 import java.util.Objects;
 
 public class Task {
-    protected String name; //Изменил поля на protected
+    protected String name;
     protected String description;
     protected int id;
     protected Status status;
