@@ -4,10 +4,10 @@ import ru.practicum.enums.Status;
 import java.util.Objects;
 
 public class Task {
-    private String name;
-    private String description;
-    private int id;
-    private Status status;
+    protected String name; //Изменил поля на protected
+    protected String description;
+    protected int id;
+    protected Status status;
 
     public Task(String name, String description) {
         this.name = name;
