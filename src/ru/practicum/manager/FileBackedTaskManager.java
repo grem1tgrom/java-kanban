@@ -88,7 +88,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
             for (int i = 1; i < lines.size(); i++) {
                 String line = lines.get(i);
-                if (line.isEmpty()) continue;
+                if (line.isEmpty()) {
+                    continue;
+                }
 
                 Task task = manager.fromString(line);
                 if (task.getId() > maxId) {
@@ -104,9 +106,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 }
             }
 
-            for(Subtask subtask : manager.subtasks.values()){
+            for (Subtask subtask : manager.subtasks.values()) {
                 Epic epic = manager.epics.get(subtask.getEpicID());
-                if(epic != null){
+                if (epic != null) {
                     epic.addSubtask(subtask);
                 }
             }
