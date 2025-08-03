@@ -114,6 +114,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             }
             manager.nextID = maxId + 1;
         } catch (IOException e) {
+            e.printStackTrace();
         }
         return manager;
     }
