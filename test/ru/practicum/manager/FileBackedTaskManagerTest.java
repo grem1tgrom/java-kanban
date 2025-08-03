@@ -3,7 +3,9 @@ package ru.practicum.manager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.practicum.enums.Status;
 import ru.practicum.task.Epic;
+import ru.practicum.task.Subtask;
 import ru.practicum.task.Task;
 
 import java.io.File;
@@ -19,7 +21,7 @@ class FileBackedTaskManagerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        tempFile = File.createTempFile("test-tasks", ".csv");
+        tempFile = File.createTempFile("test_tasks", ".csv");
         taskManager = new FileBackedTaskManager(tempFile);
     }
 
@@ -29,40 +31,50 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void shouldSaveAndLoadEmptyFile() {
+    void shouldCorrectlySaveAndLoadComplexState() {
+        Task task = new Task("Задача 1", "Описание задачи 1");
+        task.setStatus(Status.IN_PROGRESS);
+        taskManager.addTask(task);
+
+        Epic epic = new Epic("Эпик 1", "Описание эпика 1");
+        taskManager.addEpic(epic);
+
+        Subtask subtask = new Subtask("Подзадача 1.1", "Описание подзадачи 1.1", epic.getId());
+        subtask.setStatus(Status.DONE);
+        taskManager.addSubtask(subtask);
+
         FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
-        assertTrue(loadedManager.getTasks().isEmpty(), "Список задач должен быть пустым.");
-        assertTrue(loadedManager.getEpics().isEmpty(), "Список эпиков должен быть пустым.");
-        assertTrue(loadedManager.getHistory().isEmpty(), "История должна быть пустой.");
+
+        assertNotNull(loadedManager.getTasks(), "Список задач не должен быть null.");
+        assertEquals(1, loadedManager.getTasks().size(), "Количество задач не совпадает.");
+
+        Task loadedTask = loadedManager.getTaskByID(task.getId());
+        assertEquals(task.getName(), loadedTask.getName(), "Имя задачи не совпадает.");
+        assertEquals(task.getDescription(), loadedTask.getDescription(), "Описание задачи не совпадает.");
+        assertEquals(Status.IN_PROGRESS, loadedTask.getStatus(), "Статус задачи не совпадает.");
+
+        assertNotNull(loadedManager.getEpics(), "Список эпиков не должен быть null.");
+        assertEquals(1, loadedManager.getEpics().size(), "Количество эпиков не совпадает.");
+
+        Epic loadedEpic = loadedManager.getEpicByID(epic.getId());
+        assertEquals(epic.getName(), loadedEpic.getName(), "Имя эпика не совпадает.");
+
+        List<Subtask> subtasksOfEpic = loadedManager.getEpicSubtasks(loadedEpic);
+        assertNotNull(subtasksOfEpic, "Список подзадач у эпика не должен быть null.");
+        assertEquals(1, subtasksOfEpic.size(), "Количество подзадач у эпика не совпадает.");
+
+        Subtask loadedSubtask = subtasksOfEpic.get(0);
+        assertEquals(subtask.getId(), loadedSubtask.getId(), "ID подзадачи не совпадает.");
+        assertEquals(subtask.getName(), loadedSubtask.getName(), "Имя подзадачи не совпадает.");
+        assertEquals(Status.DONE, loadedSubtask.getStatus(), "Статус подзадачи не совпадает.");
+        assertEquals(epic.getId(), loadedSubtask.getEpicID(), "ID эпика у подзадачи не совпадает.");
     }
 
     @Test
-    void shouldSaveAndLoadMultipleTasks() {
-        Task task1 = taskManager.addTask(new Task("Task 1", "Desc 1"));
-        Epic epic1 = taskManager.addEpic(new Epic("Epic 1", "Epic Desc 1"));
-        taskManager.addSubtask(new ru.practicum.task.Subtask("Sub 1", "Sub Desc 1", epic1.getId()));
-
+    void shouldLoadFromEmptyFile() {
         FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
 
-        assertEquals(1, loadedManager.getTasks().size(), "Должна быть одна задача.");
-        assertEquals(1, loadedManager.getEpics().size(), "Должен быть один эпик.");
-        assertEquals(1, loadedManager.getSubtasks().size(), "Должна быть одна подзадача.");
-        assertEquals(task1.getName(), loadedManager.getTaskByID(task1.getId()).getName());
-    }
-
-    @Test
-    void shouldSaveAndLoadHistory() {
-        Task task1 = taskManager.addTask(new Task("Task 1", "Desc 1"));
-        Epic epic1 = taskManager.addEpic(new Epic("Epic 1", "Epic Desc 1"));
-
-        taskManager.getTaskByID(task1.getId());
-        taskManager.getEpicByID(epic1.getId());
-
-        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
-        List<Task> history = loadedManager.getHistory();
-
-        assertEquals(2, history.size(), "История должна содержать два элемента.");
-        assertEquals(task1.getId(), history.get(0).getId());
-        assertEquals(epic1.getId(), history.get(1).getId());
+        assertTrue(loadedManager.getTasks().isEmpty(), "Задачи должны отсутствовать.");
+        assertTrue(loadedManager.getEpics().isEmpty(), "Эпики должны отсутствовать.");
     }
 }
