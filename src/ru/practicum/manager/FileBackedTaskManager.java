@@ -29,13 +29,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(HEADER);
 
-            for (Task task : getPrioritizedTasks()) {
+            for (Task task : tasks.values()) {
                 writer.write(toString(task) + "\n");
             }
             for (Epic epic : epics.values()) {
-                if (epic.getStartTime() == null) {
-                    writer.write(toString(epic) + "\n");
-                }
+                writer.write(toString(epic) + "\n");
+            }
+            for (Subtask subtask : subtasks.values()) {
+                writer.write(toString(subtask) + "\n");
             }
         } catch (IOException e) {
             throw new ManagerSaveException("Не удалось сохранить задачи в файл: " + file.getName(), e);
@@ -94,6 +95,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     public static FileBackedTaskManager loadFromFile(File file) {
         FileBackedTaskManager manager = new FileBackedTaskManager(file);
         try {
+            if (!Files.exists(file.toPath())) {
+                return manager;
+            }
             List<String> lines = Files.readAllLines(file.toPath());
             int maxId = 0;
 
