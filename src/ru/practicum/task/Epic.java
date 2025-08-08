@@ -59,6 +59,7 @@ public class Epic extends Task {
 
     public void clearSubtasks() {
         subtaskList.clear();
+        updateEpicTime();
     }
 
 

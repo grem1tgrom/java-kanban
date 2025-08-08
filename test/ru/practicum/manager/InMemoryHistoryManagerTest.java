@@ -25,7 +25,7 @@ class InMemoryHistoryManagerTest {
     public void addShouldKeepTasksWithoutDuplicates() {
         historyManager.add(task1);
         historyManager.add(task2);
-        historyManager.add(task1); // Add again
+        historyManager.add(task1);
         List<Task> history = historyManager.getHistory();
         assertEquals(2, history.size(), "История должна содержать 2 элемента.");
         assertEquals(task2, history.get(0), "Первым элементом должен быть task2.");

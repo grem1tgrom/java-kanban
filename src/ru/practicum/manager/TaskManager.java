@@ -30,7 +30,7 @@ public interface TaskManager {
 
     List<Subtask> getSubtasks();
 
-    List<Subtask> getEpicSubtasks(int epicId); // <-- Сигнатура изменена
+    List<Subtask> getEpicSubtasks(int epicId);
 
     void deleteTasks();
 
