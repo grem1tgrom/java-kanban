@@ -23,6 +23,7 @@ class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
     void setUp() {
         try {
             tempFile = File.createTempFile("test_tasks", ".csv");
+            tempFile.delete();
             taskManager = new FileBackedTaskManager(tempFile);
         } catch (IOException e) {
             throw new RuntimeException("Не удалось создать временный файл для тестов", e);
@@ -49,7 +50,6 @@ class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
         subtask.setStatus(Status.DONE);
         taskManager.addSubtask(subtask);
 
-        taskManager.save(); // Сохраняем состояние
         FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
 
         assertNotNull(loadedManager.getTasks(), "Список задач не должен быть null.");
@@ -79,7 +79,6 @@ class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
 
     @Test
     void shouldLoadFromEmptyFile() {
-        taskManager.save(); // Сохраняем пустое состояние
         FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
 
         assertTrue(loadedManager.getTasks().isEmpty(), "Задачи должны отсутствовать.");
