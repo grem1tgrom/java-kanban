@@ -5,7 +5,9 @@ import ru.practicum.enums.Status;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class Epic extends Task {
 
@@ -14,57 +16,46 @@ public class Epic extends Task {
 
     public Epic(String name, String description) {
         super(name, description);
+        this.status = Status.NEW;
     }
 
     public Epic(int id, String name, String description, Status status) {
         super(id, name, description, status);
     }
 
-    @Override
-    public Duration getDuration() {
-        Duration epicDuration = Duration.ZERO;
-        for (Subtask subtask : subtaskList) {
-            epicDuration = epicDuration.plus(subtask.getDuration());
-        }
-        return epicDuration;
+    public void updateEpicTime() {
+        this.duration = subtaskList.stream()
+                .map(Task::getDuration)
+                .filter(Objects::nonNull)
+                .reduce(Duration.ZERO, Duration::plus);
+
+        this.startTime = subtaskList.stream()
+                .map(Task::getStartTime)
+                .filter(Objects::nonNull)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+
+        this.endTime = subtaskList.stream()
+                .map(Task::getEndTime)
+                .filter(Objects::nonNull)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
     }
 
-    @Override
-    public LocalDateTime getStartTime() {
-        if (subtaskList.isEmpty()) {
-            return null;
-        }
-        LocalDateTime earliestStart = null;
-        for (Subtask subtask : subtaskList) {
-            if (subtask.getStartTime() != null) {
-                if (earliestStart == null || subtask.getStartTime().isBefore(earliestStart)) {
-                    earliestStart = subtask.getStartTime();
-                }
-            }
-        }
-        return earliestStart;
-    }
 
     @Override
     public LocalDateTime getEndTime() {
-        if (subtaskList.isEmpty()) {
-            return null;
-        }
-        LocalDateTime latestEnd = null;
-        for (Subtask subtask : subtaskList) {
-            if (subtask.getEndTime() != null) {
-                if (latestEnd == null || subtask.getEndTime().isAfter(latestEnd)) {
-                    latestEnd = subtask.getEndTime();
-                }
-            }
-        }
-        this.endTime = latestEnd;
-        return this.endTime;
+        return endTime;
     }
 
     public void addSubtask(Subtask subtask) {
         subtaskList.add(subtask);
     }
+
+    public void removeSubtask(Subtask subtask) {
+        subtaskList.remove(subtask);
+    }
+
 
     public void clearSubtasks() {
         subtaskList.clear();
@@ -72,7 +63,7 @@ public class Epic extends Task {
 
 
     public List<Subtask> getSubtaskList() {
-        return subtaskList;
+        return Collections.unmodifiableList(subtaskList);
     }
 
     @Override

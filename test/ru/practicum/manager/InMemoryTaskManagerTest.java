@@ -9,13 +9,12 @@ import ru.practicum.task.Epic;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class InMemoryTaskManagerTest {
+class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
 
-    private TaskManager taskManager;
-
+    @Override
     @BeforeEach
-    public void beforeEach() {
-        taskManager = Managers.getDefault();
+    public void setUp() {
+        taskManager = new InMemoryTaskManager();
     }
 
     @Test

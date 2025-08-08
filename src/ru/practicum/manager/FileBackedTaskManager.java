@@ -119,7 +119,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 } else {
                     manager.tasks.put(task.getId(), task);
                 }
-                if (task.getStartTime() != null) {
+                if (task.getStartTime() != null && !(task instanceof Epic)) {
                     manager.prioritizedTasks.add(task);
                 }
             }
@@ -129,6 +129,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 if (epic != null) {
                     epic.addSubtask(subtask);
                 }
+            }
+            for (Epic epic : manager.epics.values()) {
+                epic.updateEpicTime();
             }
             manager.nextID = maxId + 1;
         } catch (IOException e) {

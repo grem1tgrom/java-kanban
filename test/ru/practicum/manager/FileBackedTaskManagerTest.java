@@ -14,20 +14,26 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class FileBackedTaskManagerTest {
+class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
 
     private File tempFile;
-    private FileBackedTaskManager taskManager;
 
+    @Override
     @BeforeEach
-    void setUp() throws IOException {
-        tempFile = File.createTempFile("test_tasks", ".csv");
-        taskManager = new FileBackedTaskManager(tempFile);
+    void setUp() {
+        try {
+            tempFile = File.createTempFile("test_tasks", ".csv");
+            taskManager = new FileBackedTaskManager(tempFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Не удалось создать временный файл для тестов", e);
+        }
     }
 
     @AfterEach
     void tearDown() {
-        tempFile.delete();
+        if (tempFile != null) {
+            tempFile.delete();
+        }
     }
 
     @Test
@@ -43,6 +49,7 @@ class FileBackedTaskManagerTest {
         subtask.setStatus(Status.DONE);
         taskManager.addSubtask(subtask);
 
+        taskManager.save(); // Сохраняем состояние
         FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
 
         assertNotNull(loadedManager.getTasks(), "Список задач не должен быть null.");
@@ -59,7 +66,7 @@ class FileBackedTaskManagerTest {
         Epic loadedEpic = loadedManager.getEpicByID(epic.getId());
         assertEquals(epic.getName(), loadedEpic.getName(), "Имя эпика не совпадает.");
 
-        List<Subtask> subtasksOfEpic = loadedManager.getEpicSubtasks(loadedEpic);
+        List<Subtask> subtasksOfEpic = loadedManager.getEpicSubtasks(loadedEpic.getId());
         assertNotNull(subtasksOfEpic, "Список подзадач у эпика не должен быть null.");
         assertEquals(1, subtasksOfEpic.size(), "Количество подзадач у эпика не совпадает.");
 
@@ -72,6 +79,7 @@ class FileBackedTaskManagerTest {
 
     @Test
     void shouldLoadFromEmptyFile() {
+        taskManager.save(); // Сохраняем пустое состояние
         FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
 
         assertTrue(loadedManager.getTasks().isEmpty(), "Задачи должны отсутствовать.");
