@@ -12,13 +12,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private final File file;
-    private static final String HEADER = "id,type,name,status,description,epic\n";
+    private static final String HEADER = "id,type,name,status,description,epic,startTime,duration\n";
 
     public FileBackedTaskManager(File file) {
         this.file = file;
@@ -28,13 +29,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(HEADER);
 
-            List<Task> allTasks = new ArrayList<>();
-            allTasks.addAll(tasks.values());
-            allTasks.addAll(epics.values());
-            allTasks.addAll(subtasks.values());
-
-            for (Task task : allTasks) {
+            for (Task task : tasks.values()) {
                 writer.write(toString(task) + "\n");
+            }
+            for (Epic epic : epics.values()) {
+                writer.write(toString(epic) + "\n");
+            }
+            for (Subtask subtask : subtasks.values()) {
+                writer.write(toString(subtask) + "\n");
             }
         } catch (IOException e) {
             throw new ManagerSaveException("Не удалось сохранить задачи в файл: " + file.getName(), e);
@@ -58,7 +60,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 task.getName(),
                 task.getStatus().toString(),
                 task.getDescription(),
-                epicId
+                epicId,
+                task.getStartTime() != null ? task.getStartTime().toString() : "null",
+                String.valueOf(task.getDuration().toMinutes())
         );
     }
 
@@ -69,20 +73,31 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         String name = parts[2];
         Status status = Status.valueOf(parts[3]);
         String description = parts[4];
+        LocalDateTime startTime = !"null".equals(parts[6]) ? LocalDateTime.parse(parts[6]) : null;
+        Duration duration = Duration.ofMinutes(Long.parseLong(parts[7]));
 
+        Task task;
         if (type == TaskType.SUBTASK) {
             int epicId = Integer.parseInt(parts[5]);
-            return new Subtask(id, name, description, status, epicId);
+            task = new Subtask(id, name, description, status, epicId);
         } else if (type == TaskType.EPIC) {
-            return new Epic(id, name, description, status);
+            task = new Epic(id, name, description, status);
         } else {
-            return new Task(id, name, description, status);
+            task = new Task(id, name, description, status);
         }
+
+        task.setStartTime(startTime);
+        task.setDuration(duration);
+        return task;
     }
+
 
     public static FileBackedTaskManager loadFromFile(File file) {
         FileBackedTaskManager manager = new FileBackedTaskManager(file);
         try {
+            if (!Files.exists(file.toPath())) {
+                return manager;
+            }
             List<String> lines = Files.readAllLines(file.toPath());
             int maxId = 0;
 
@@ -104,6 +119,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 } else {
                     manager.tasks.put(task.getId(), task);
                 }
+                if (task.getStartTime() != null && !(task instanceof Epic)) {
+                    manager.prioritizedTasks.add(task);
+                }
             }
 
             for (Subtask subtask : manager.subtasks.values()) {
@@ -111,6 +129,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 if (epic != null) {
                     epic.addSubtask(subtask);
                 }
+            }
+            for (Epic epic : manager.epics.values()) {
+                epic.updateEpicTime();
             }
             manager.nextID = maxId + 1;
         } catch (IOException e) {
