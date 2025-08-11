@@ -11,12 +11,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class TaskHandler extends BaseHttpHandler {
-    private final TaskManager taskManager;
-    private final Gson gson;
 
     public TaskHandler(TaskManager taskManager, Gson gson) {
-        this.taskManager = taskManager;
-        this.gson = gson;
+        super(taskManager, gson);
     }
 
     @Override
@@ -41,6 +38,10 @@ public class TaskHandler extends BaseHttpHandler {
                 case "POST":
                     InputStream is = exchange.getRequestBody();
                     String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    if (body.isEmpty()) {
+                        sendNotFound(exchange, "Тело запроса не может быть пустым.");
+                        break;
+                    }
                     Task task = gson.fromJson(body, Task.class);
 
                     if (task.getId() == 0) {
@@ -57,8 +58,7 @@ public class TaskHandler extends BaseHttpHandler {
                         taskManager.deleteTaskByID(id);
                         sendText(exchange, "Задача удалена", 201);
                     } else {
-                        taskManager.deleteTasks();
-                        sendText(exchange, "Все задачи удалены", 201);
+                        sendNotFound(exchange, "Эндпоинт не найден");
                     }
                     break;
                 default:

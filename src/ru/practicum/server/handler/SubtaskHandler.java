@@ -11,12 +11,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class SubtaskHandler extends BaseHttpHandler {
-    private final TaskManager taskManager;
-    private final Gson gson;
 
     public SubtaskHandler(TaskManager taskManager, Gson gson) {
-        this.taskManager = taskManager;
-        this.gson = gson;
+        super(taskManager, gson);
     }
 
     @Override
@@ -39,6 +36,10 @@ public class SubtaskHandler extends BaseHttpHandler {
                 case "POST":
                     InputStream is = exchange.getRequestBody();
                     String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    if (body.isEmpty()) {
+                        sendNotFound(exchange, "Тело запроса не может быть пустым.");
+                        break;
+                    }
                     Subtask subtask = gson.fromJson(body, Subtask.class);
 
                     if (subtask.getId() == 0) {
@@ -55,8 +56,7 @@ public class SubtaskHandler extends BaseHttpHandler {
                         taskManager.deleteSubtaskByID(id);
                         sendText(exchange, "Подзадача удалена", 201);
                     } else {
-                        taskManager.deleteSubtasks();
-                        sendText(exchange, "Все подзадачи удалены", 201);
+                        sendNotFound(exchange, "Эндпоинт не найден");
                     }
                     break;
                 default:

@@ -12,12 +12,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class EpicHandler extends BaseHttpHandler {
-    private final TaskManager taskManager;
-    private final Gson gson;
 
     public EpicHandler(TaskManager taskManager, Gson gson) {
-        this.taskManager = taskManager;
-        this.gson = gson;
+        super(taskManager, gson);
     }
 
     @Override
@@ -51,13 +48,14 @@ public class EpicHandler extends BaseHttpHandler {
                 case "POST":
                     InputStream is = exchange.getRequestBody();
                     String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    if (body.isEmpty()) {
+                        sendNotFound(exchange, "Тело запроса не может быть пустым.");
+                        break;
+                    }
                     Epic epic = gson.fromJson(body, Epic.class);
                     if (epic.getId() == 0) {
                         Epic createdEpic = taskManager.addEpic(epic);
                         sendText(exchange, gson.toJson(createdEpic), 201);
-                    } else {
-                        taskManager.updateEpic(epic);
-                        sendText(exchange, gson.toJson(epic), 201);
                     }
                     break;
                 case "DELETE":
@@ -66,8 +64,7 @@ public class EpicHandler extends BaseHttpHandler {
                         taskManager.deleteEpicByID(id);
                         sendText(exchange, "Эпик удален", 201);
                     } else {
-                        taskManager.deleteEpics();
-                        sendText(exchange, "Все эпики удалены", 201);
+                        sendNotFound(exchange, "Эндпоинт не найден");
                     }
                     break;
                 default:
