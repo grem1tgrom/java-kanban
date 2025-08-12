@@ -3,6 +3,7 @@ package ru.practicum.manager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.practicum.enums.Status;
+import ru.practicum.exception.TaskValidationException;
 import ru.practicum.task.Epic;
 import ru.practicum.task.Subtask;
 import ru.practicum.task.Task;
@@ -104,6 +105,6 @@ public abstract class TaskManagerTest<T extends TaskManager> {
         task2.setStartTime(LocalDateTime.of(2024, 1, 1, 10, 30));
         task2.setDuration(Duration.ofHours(1));
 
-        assertThrows(IllegalArgumentException.class, () -> taskManager.addTask(task2));
+        assertThrows(TaskValidationException.class, () -> taskManager.addTask(task2));
     }
 }
